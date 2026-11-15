@@ -9,8 +9,10 @@ root = Path(__file__).resolve().parent.parent
 app = json.loads((root / 'build' / 'appinfo.json').read_text())
 keys = app['appKeys']
 data = json.loads((root / 'tools' / 'shots.json').read_text())
-out = root / 'build' / 'shots'
-(out / 'gif').mkdir(parents=True, exist_ok=True)
+out = root / 'screenshots'
+gif = root / 'build' / 'gif'
+out.mkdir(exist_ok=True)
+gif.mkdir(parents=True, exist_ok=True)
 
 
 def pebble(*args):
@@ -57,7 +59,7 @@ for i in range(g['frames']):
     m = i * g['step_min']
     awake = min(max(m - 6 * 60, 0), 16 * 60) / (16 * 60)
     b0, b1 = g['battery']
-    frames.append(out / 'gif' / f'{i:02d}.png')
+    frames.append(gif / f'{i:02d}.png')
     shot(f'{m // 60:02d}:{m % 60:02d}', round(g['steps'] * awake), round(b0 + (b1 - b0) * i / (g['frames'] - 1)), False, frames[-1])
 subprocess.run(['magick', '-delay', str(g['delay_ms'] // 10), '-loop', '0', *map(str, frames), str(out / 'emery_0.gif')], check=True)
 print(out / 'emery_0.gif')

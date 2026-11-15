@@ -3,6 +3,11 @@
   "author": "ErBlack",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "build": "pebble build",
+    "shots": "python3 tools/shots.py",
+    "publish": "pebble publish --pbw build/progressring.pbw"
+  },
   "pebble": {
     "displayName": "Progressring",
     "uuid": "85976604-4bc2-4213-ad6d-294e63e96973",
