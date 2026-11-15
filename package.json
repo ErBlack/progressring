@@ -1,0 +1,38 @@
+{
+  "name": "progressring",
+  "author": "ErBlack",
+  "version": "1.0.0",
+  "private": true,
+  "pebble": {
+    "displayName": "Progressring",
+    "uuid": "85976604-4bc2-4213-ad6d-294e63e96973",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "TEMP",
+      "COND",
+      "RISE",
+      "SET",
+      "PLACE",
+      "TZ",
+      "EVENTS"
+    ],
+    "resources": {
+      "media": []
+    },
+    "capabilities": [
+      "health",
+      "location"
+    ],
+    "usesPermissions": [
+      "Location",
+      "Calendar"
+    ]
+  }
+}
