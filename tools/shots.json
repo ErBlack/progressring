@@ -1,0 +1,51 @@
+{
+  "gif": {
+    "frames": 30, "step_min": 48, "delay_ms": 250,
+    "temp": "18°C", "cond": 0, "rise": "06:40", "set": "19:50",
+    "place": "LIS", "tz": "UTC+1",
+    "steps": 14000, "battery": [100, 42],
+    "events": [
+      {"name": "Morning run", "start": "06:15", "end": "07:30"},
+      {"name": "Team standup", "start": "09:30", "end": "09:45"},
+      {"name": "Design review", "start": "11:00", "end": "12:15"},
+      {"name": "Lunch with Anna", "start": "13:00", "end": "14:00"},
+      {"name": "Dentist appointment", "start": "16:30", "end": "17:00"},
+      {"name": "Dinner with friends", "start": "19:00", "end": "21:00"},
+      {"name": "Flight to Lisbon", "start": "07:15", "end": "10:05", "day": 1}
+    ]
+  },
+  "shots": [
+    {
+      "time": "09:41",
+      "temp": "21°C", "cond": 0, "rise": "06:12", "set": "20:48",
+      "place": "LIS", "tz": "UTC+1",
+      "steps": 2140, "battery": 86,
+      "events": [
+        {"name": "Team standup", "start": "09:30", "end": "09:55"},
+        {"name": "Lunch with Anna", "start": "12:30", "end": "13:30"},
+        {"name": "Design review", "start": "15:00", "end": "16:00"},
+        {"name": "Gym", "start": "18:30", "end": "19:30"}
+      ]
+    },
+    {
+      "time": "16:05",
+      "temp": "4°C", "cond": 2, "rise": "07:45", "set": "16:30",
+      "place": "BER", "tz": "UTC+1",
+      "steps": 9876, "battery": 54,
+      "events": [
+        {"name": "Weekly planning", "start": "10:00", "end": "11:00"},
+        {"name": "Dentist appointment", "start": "17:00", "end": "17:45"},
+        {"name": "Dinner with friends", "start": "19:30", "end": "22:00"}
+      ]
+    },
+    {
+      "time": "23:10",
+      "temp": "12°C", "cond": 0, "rise": "06:30", "set": "19:10",
+      "place": "JFK", "tz": "UTC-5",
+      "steps": 12034, "battery": 23, "charging": true,
+      "events": [
+        {"name": "Flight to Lisbon", "start": "07:15", "end": "10:05", "day": 1}
+      ]
+    }
+  ]
+}
