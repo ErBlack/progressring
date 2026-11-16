@@ -115,10 +115,10 @@ static void text_r(int xr, int y, const Str *s, uint8_t col) {
 static void text_c(int x, int y, const char *u, uint8_t col) { Str s; str_set(&s, u); text(x, y, &s, col); }
 static void text_rc(int xr, int y, const char *u, uint8_t col) { Str s; str_set(&s, u); text_r(xr, y, &s, col); }
 
-static void icon(int x, int y, const Icon *ic) {
+static void icon(int x, int y, const Icon *ic, uint8_t col) {
   for (int r = 0; r < ic->h; r++)
     for (int c = 0; c < ic->w; c++)
-      if (ic->px[r * ic->w + c] == '#') px(x + c, y + r, C_WHITE);
+      if (ic->px[r * ic->w + c] == '#') px(x + c, y + r, col);
 }
 
 static const char *BOLT8[8] = {"...##", "..##.", ".##..", "#####", "#####", "..##.", ".##..", "##..."};
@@ -250,7 +250,7 @@ static void tile(int x0, int y0, int x1, int h, int pv, const Icon *ic, int slot
   int ix = x0 + 1 + PAD, iy = y0 + 1 + pv, HC = h - 2 - 2 * pv;
   frame(x0, y0, x1, y0 + h - 1, C_WHITE);
   if (!slot) slot = ic->w;
-  icon(ix + (center ? (slot - ic->w) >> 1 : 0), iy + ((HC - ic->h) >> 1), ic);
+  icon(ix + (center ? (slot - ic->w) >> 1 : 0), iy + ((HC - ic->h) >> 1), ic, C_WHITE);
   if (u) text_c(ix + slot + INNER, iy + ((HC - TH) >> 1), u, C_WHITE);
 }
 
@@ -444,7 +444,7 @@ void face_render(GContext *ctx, const FaceState *st) {
     int ix = L0 + 1 + PAD, iy = y + 1 + PAD, tx = ix + ICON_CAL.w + INNER, HC = 3 * TH + 2 * LINE_GAP;
     int icy = iy + ((HC - ICON_CAL.h) >> 1);
     const FaceEvent *shown = going ? going->src : next && (next->start < mid + 86400 || !all_day) ? next : all_day;
-    icon(ix, icy, &ICON_CAL);
+    icon(ix, icy, &ICON_CAL, live ? C_EVENT : C_WHITE);
     if (!conn || !shown) text_c(tx, row_y(iy, HC, 1, 0), conn ? "NO EVENTS" : "NO DATA", C_LIGHT);
     else {
       char rem[16] = "", span[24];

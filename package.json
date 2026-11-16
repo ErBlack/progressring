@@ -6,7 +6,9 @@
   "scripts": {
     "build": "pebble build",
     "shots": "python3 tools/shots.py",
-    "publish": "pebble publish --pbw build/progressring.pbw"
+    "publish": "pebble publish --pbw build/progressring.pbw",
+    "version": "npm run build",
+    "postversion": "git push && git push --tags && npm run publish"
   },
   "pebble": {
     "displayName": "Progressring",
