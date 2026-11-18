@@ -16,7 +16,7 @@
   },
   "shots": [
     {
-      "time": "09:41",
+      "time": "09:41", "light": true,
       "temp": "21°C", "cond": 0, "rise": "06:12", "set": "20:48",
       "place": "LIS", "tz": "UTC+1",
       "steps": 2140, "battery": 86,

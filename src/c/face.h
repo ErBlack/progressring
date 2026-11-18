@@ -4,6 +4,8 @@
 #define MAX_EVENTS 10
 #define NAME_LEN 128
 
+enum { THEME_DARK, THEME_LIGHT };
+
 typedef struct {
   int32_t start;
   int32_t end;
@@ -36,6 +38,7 @@ typedef struct {
   bool connected;
   bool quiet;
   int unobstructed_h;
+  uint8_t theme;
   const PhoneData *ph;
 } FaceState;
 

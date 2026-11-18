@@ -1,0 +1,21 @@
+[
+  {
+    "type": "heading",
+    "defaultValue": "Progressring"
+  },
+  {
+    "type": "radiogroup",
+    "messageKey": "THEME",
+    "label": "Theme",
+    "defaultValue": "0",
+    "serializeValueAs": "integer",
+    "options": [
+      { "label": "Dark", "value": "0" },
+      { "label": "Light", "value": "1" }
+    ]
+  },
+  {
+    "type": "submit",
+    "defaultValue": "Save"
+  }
+]

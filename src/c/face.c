@@ -20,6 +20,7 @@ enum { ADV = 8, TH = 10 };
 #define C_NIGHT 0xC6
 
 static uint8_t *s_row[H];
+static uint8_t s_bg, s_fg, s_ghost, s_dim;
 static int16_t s_min[H], s_max[H];
 static int s_U;
 
@@ -137,8 +138,8 @@ static void battery_px(char *out, int pct, bool charging) {
 static const char SEG_ON[10][8] = {"abcdef", "bc", "abged", "abgcd", "fgbc", "afgcd", "afgedc", "abc", "abcdefg", "abcdfg"};
 
 static void seg_px(int x, int y, bool ghost) {
-  if (ghost) { if (!((x + y) & 1)) px(x, y, C_DARK); }
-  else px(x, y, C_WHITE);
+  if (ghost) { if (!((x + y) & 1)) px(x, y, s_ghost); }
+  else px(x, y, s_fg);
 }
 
 static void hseg(int x0, int x1, int yc, int t, bool ghost) {
@@ -248,10 +249,10 @@ static int round_i(float v) { return (int)ffloor(v + 0.5f); }
 
 static void tile(int x0, int y0, int x1, int h, int pv, const Icon *ic, int slot, bool center, const char *u) {
   int ix = x0 + 1 + PAD, iy = y0 + 1 + pv, HC = h - 2 - 2 * pv;
-  frame(x0, y0, x1, y0 + h - 1, C_WHITE);
+  frame(x0, y0, x1, y0 + h - 1, s_fg);
   if (!slot) slot = ic->w;
-  icon(ix + (center ? (slot - ic->w) >> 1 : 0), iy + ((HC - ic->h) >> 1), ic, C_WHITE);
-  if (u) text_c(ix + slot + INNER, iy + ((HC - TH) >> 1), u, C_WHITE);
+  icon(ix + (center ? (slot - ic->w) >> 1 : 0), iy + ((HC - ic->h) >> 1), ic, s_fg);
+  if (u) text_c(ix + slot + INNER, iy + ((HC - TH) >> 1), u, s_fg);
 }
 
 static const Icon *WX_ICONS[9] = {&ICON_CLEAR, &ICON_PARTLY, &ICON_CLOUDY, &ICON_RAIN_L, &ICON_RAIN_H,
@@ -301,10 +302,15 @@ static int row_y(int iy, int HC, int n, int k) {
 void face_render(GContext *ctx, const FaceState *st) {
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
   if (!fb) return;
+  bool light = st->theme == THEME_LIGHT;
+  s_bg = light ? C_WHITE : C_BLACK;
+  s_fg = light ? C_BLACK : C_WHITE;
+  s_ghost = light ? C_LIGHT : C_DARK;
+  s_dim = light ? C_DARK : C_LIGHT;
   for (int y = 0; y < H; y++) {
     GBitmapDataRowInfo ri = gbitmap_get_data_row_info(fb, y);
     s_row[y] = ri.data; s_min[y] = ri.min_x; s_max[y] = ri.max_x;
-    for (int x = ri.min_x; x <= ri.max_x; x++) ri.data[x] = C_BLACK;
+    for (int x = ri.min_x; x <= ri.max_x; x++) ri.data[x] = s_bg;
   }
 
   const PhoneData *ph = st->ph;
@@ -362,13 +368,13 @@ void face_render(GContext *ctx, const FaceState *st) {
       }
   }
   for (int hh = 0; hh < 24; hh++) {
-    notch_at(pos(hh, TICK_W), 0, 0, C_BLACK, TICK_W);
-    notch_at(pos(hh, TICK_W), BAND - 1, BAND - 1, C_BLACK, TICK_W);
+    notch_at(pos(hh, TICK_W), 0, 0, s_bg, TICK_W);
+    notch_at(pos(hh, TICK_W), BAND - 1, BAND - 1, s_bg, TICK_W);
   }
   if (conn)
     for (int i = 0; i < ne; i++)
       if (evs[i].src->start > st->now_t) notch_at(pos(evs[i].t, MARK_W), 0, BAND - 1 + MARK_OVER, C_EVENT, MARK_W);
-  notch_at(pos(now, MARK_W), 0, BAND - 1 + MARK_OVER, C_WHITE, MARK_W);
+  notch_at(pos(now, MARK_W), 0, BAND - 1 + MARK_OVER, s_fg, MARK_W);
 
   int L0 = BAND + RING_GAP, R0 = W - 1 - L0, T0 = L0, B0 = U - 1 - L0;
   int iw = R0 - L0 + 1;
@@ -414,12 +420,12 @@ void face_render(GContext *ctx, const FaceState *st) {
   int pl = ink_w(&sp);
   if (pl + ADV + ink_w(&stz) > pw && strncmp(pi->tz, "UTC", 3) == 0) str_set(&stz, pi->tz + 3);
   if (pl + ADV + ink_w(&stz) <= pw)
-    text(xC + 1 + PAD + ICON_PIN.w + INNER + pl + ADV, y + 1 + pT + ((hTop - 2 - 2 * pT - TH) >> 1), &stz, C_WHITE);
+    text(xC + 1 + PAD + ICON_PIN.w + INNER + pl + ADV, y + 1 + pT + ((hTop - 2 - 2 * pT - TH) >> 1), &stz, s_fg);
   y += hTop + GAP;
 
   int hTime = clkC + 3 * pC + (peek ? 0 : (B0 - T0 + 1) - (2 * hTop + clkC + 3 * pC + hEv + 3 * GAP));
   int extra = hTime - clkC - 3 * pC;
-  frame(L0, y, R0, y + hTime - 1, C_WHITE);
+  frame(L0, y, R0, y + hTime - 1, s_fg);
   int gw = 4 * DIG_W + 2 * DIG_GAP + COLON_W, hp = (iw - 2 - gw) / 2, x = L0 + 1 + hp;
   int xs[4] = {x, x + DIG_W + DIG_GAP, x + 2 * DIG_W + DIG_GAP + COLON_W, x + 3 * DIG_W + 2 * DIG_GAP + COLON_W};
   int Y0 = y + 1 + pC;
@@ -428,24 +434,24 @@ void face_render(GContext *ctx, const FaceState *st) {
   for (int i = 0; i < 4; i++) digit(xs[i], Y0, dd[i], DIG_W, DIG_T, dh, &gT, &gM, &gB);
   int cx0 = x + 2 * DIG_W + DIG_GAP + (COLON_W - COLON) / 2;
   int cys[2] = {(gT + gM - 4) >> 1, (gM + gB - 4) >> 1};
-  for (int i = 0; i < 2; i++) rect(cx0, cys[i], cx0 + COLON - 1, cys[i] + COLON - 1, C_WHITE);
+  for (int i = 0; i < 2; i++) rect(cx0, cys[i], cx0 + COLON - 1, cys[i] + COLON - 1, s_fg);
   static const char *DOW[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
   static const char *MON[12] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
   int l1 = Y0 + dh + pC + extra;
-  text_c(L0 + 1 + PAD, l1, DOW[st->now.tm_wday], C_WHITE);
+  text_c(L0 + 1 + PAD, l1, DOW[st->now.tm_wday], s_fg);
   char date[16];
   snprintf(date, sizeof date, "%02d %s %d", st->now.tm_mday, MON[st->now.tm_mon], st->now.tm_year + 1900);
-  text_rc(R0 - PAD - 1, l1, date, C_WHITE);
+  text_rc(R0 - PAD - 1, l1, date, s_fg);
   y += hTime + GAP;
 
   if (!peek) {
     bool live = going && conn;
-    frame(L0, y, R0, y + hEv - 1, live ? C_EVENT : C_WHITE);
+    frame(L0, y, R0, y + hEv - 1, live ? C_EVENT : s_fg);
     int ix = L0 + 1 + PAD, iy = y + 1 + PAD, tx = ix + ICON_CAL.w + INNER, HC = 3 * TH + 2 * LINE_GAP;
     int icy = iy + ((HC - ICON_CAL.h) >> 1);
     const FaceEvent *shown = going ? going->src : next && (next->start < mid + 86400 || !all_day) ? next : all_day;
-    icon(ix, icy, &ICON_CAL, live ? C_EVENT : C_WHITE);
-    if (!conn || !shown) text_c(tx, row_y(iy, HC, 1, 0), conn ? "NO EVENTS" : "NO DATA", C_LIGHT);
+    icon(ix, icy, &ICON_CAL, live ? C_EVENT : s_fg);
+    if (!conn || !shown) text_c(tx, row_y(iy, HC, 1, 0), conn ? "NO EVENTS" : "NO DATA", s_dim);
     else {
       char rem[16] = "", span[24];
       if (shown->all_day) snprintf(span, sizeof span, "ALL DAY");
@@ -459,9 +465,9 @@ void face_render(GContext *ctx, const FaceState *st) {
       Str name, l[3];
       str_set(&name, shown->name);
       int n = wrap_words(&name, (R0 - PAD - tx + 1) / ADV, l);
-      for (int k = 0; k < n; k++) text(tx, row_y(iy, HC, n + 1, k), &l[k], C_WHITE);
-      text_c(tx, row_y(iy, HC, n + 1, n), span, C_WHITE);
-      text_rc(R0 - PAD - 1, row_y(iy, HC, n + 1, n), rem, C_WHITE);
+      for (int k = 0; k < n; k++) text(tx, row_y(iy, HC, n + 1, k), &l[k], s_fg);
+      text_c(tx, row_y(iy, HC, n + 1, n), span, s_fg);
+      text_rc(R0 - PAD - 1, row_y(iy, HC, n + 1, n), rem, s_fg);
     }
     y += hEv + GAP;
   }

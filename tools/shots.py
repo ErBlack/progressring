@@ -39,6 +39,7 @@ def send(s):
     pebble('send-app-message', '--app-uuid', app['uuid'],
            '--string', f"{keys['TEMP']}={s['temp']}", f"{keys['PLACE']}={s['place']}", f"{keys['TZ']}={s['tz']}",
            '--int', f"{keys['COND']}={s['cond']}", f"{keys['RISE']}={at(s['rise'])}", f"{keys['SET']}={at(s['set'])}",
+            f"{keys['THEME']}={int(s.get('light', False))}",
            '--bytes', f"{keys['EVENTS']}={ev.hex()}")
 
 

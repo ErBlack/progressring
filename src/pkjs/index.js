@@ -1,3 +1,5 @@
+var Clay = require('@rebble/clay');
+var clay = new Clay(require('./config.json'));
 var AP = require('./airports');
 
 var WX = ['sun', 'partly_cloudy', 'cloudy', 'light_rain', 'heavy_rain', 'light_snow', 'heavy_snow', 'rain_and_snow', 'unknown'];

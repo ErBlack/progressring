@@ -6,7 +6,7 @@
   "scripts": {
     "build": "pebble build",
     "shots": "python3 tools/shots.py",
-    "publish": "pebble publish --pbw build/progressring.pbw",
+    "publish": "pebble publish --pbw build/progressring.pbw --release-notes \"$(git log --format='- %s' $(git describe --tags --abbrev=0 HEAD^)..HEAD^)\"",
     "version": "npm run build",
     "postversion": "git push && git push --tags && npm run publish"
   },
@@ -28,12 +28,14 @@
       "SET",
       "PLACE",
       "TZ",
-      "EVENTS"
+      "EVENTS",
+      "THEME"
     ],
     "resources": {
       "media": []
     },
     "capabilities": [
+      "configurable",
       "health",
       "location"
     ],
@@ -41,5 +43,8 @@
       "Location",
       "Calendar"
     ]
+  },
+  "dependencies": {
+    "@rebble/clay": "^1.1.0"
   }
 }

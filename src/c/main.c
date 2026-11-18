@@ -1,12 +1,13 @@
 #include <pebble.h>
 #include "face.h"
 
-enum { P_VER = 1, P_INFO = 2, P_NEV = 3, P_EV0 = 10 };
+enum { P_VER = 1, P_INFO = 2, P_NEV = 3, P_THEME = 4, P_EV0 = 10 };
 #define DATA_VER 3
 
 static Window *s_win;
 static Layer *s_layer;
 static PhoneData s_ph, s_old;
+static uint8_t s_theme;
 
 static void save(void) {
   if (memcmp(&s_old.info, &s_ph.info, sizeof s_ph.info)) persist_write_data(P_INFO, &s_ph.info, sizeof s_ph.info);
@@ -18,6 +19,7 @@ static void save(void) {
 }
 
 static void load(void) {
+  s_theme = persist_read_int(P_THEME);
   memset(&s_ph, 0, sizeof s_ph);
   s_ph.info.cond = 8;
   if (persist_read_int(P_VER) != DATA_VER) {
@@ -67,6 +69,14 @@ static void inbox(DictionaryIterator *it, void *ctx) {
     }
     s_ph.nev = n;
   }
+  if ((t = dict_find(it, MESSAGE_KEY_THEME))) {
+    int v = t->value->int32;
+    if (v >= THEME_DARK && v <= THEME_LIGHT && v != s_theme) {
+      s_theme = v;
+      persist_write_int(P_THEME, v);
+      layer_mark_dirty(s_layer);
+    }
+  }
   if (memcmp(&s_old, &s_ph, sizeof s_ph)) { save(); layer_mark_dirty(s_layer); }
 }
 
@@ -87,6 +97,7 @@ static void update(Layer *layer, GContext *ctx) {
   st.quiet = quiet_time_is_active();
   st.unobstructed_h = layer_get_unobstructed_bounds(layer).size.h;
   st.ph = &s_ph;
+  st.theme = s_theme;
   face_render(ctx, &st);
 }
 
