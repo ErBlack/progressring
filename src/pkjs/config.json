@@ -6,7 +6,7 @@
   {
     "type": "radiogroup",
     "messageKey": "THEME",
-    "label": "Theme",
+    "label": "Appearance",
     "defaultValue": "0",
     "serializeValueAs": "integer",
     "options": [
@@ -24,6 +24,12 @@
       { "label": "Watch", "value": "0" },
       { "label": "Phone", "value": "1" }
     ]
+  },
+  {
+    "type": "toggle",
+    "messageKey": "WEEK",
+    "label": "Week numbers",
+    "defaultValue": false
   },
   {
     "type": "submit",

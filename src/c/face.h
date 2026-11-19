@@ -40,6 +40,7 @@ typedef struct {
   bool quiet;
   int unobstructed_h;
   uint8_t theme;
+  bool week;
   uint8_t batt_src;
   int phone_batt;
   const PhoneData *ph;

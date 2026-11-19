@@ -278,6 +278,15 @@ static bool is_day(float v, float a, float b) { return a <= b ? v >= a && v < b 
 
 static int round_i(float v) { return (int)ffloor(v + 0.5f); }
 
+static int year_days(int y) { return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0 ? 366 : 365; }
+
+static int iso_week(const struct tm *t) {
+  int y = t->tm_year + 1900, th = t->tm_yday - (t->tm_wday + 6) % 7 + 3;
+  if (th < 0) th += year_days(y - 1);
+  else if (th >= year_days(y)) th -= year_days(y);
+  return th / 7 + 1;
+}
+
 static void tile(int x0, int y0, int x1, int h, int pv, const Icon *ic, int slot, bool center, const char *u) {
   int ix = x0 + 1 + PAD, iy = y0 + 1 + pv, HC = h - 2 - 2 * pv;
   frame(x0, y0, x1, y0 + h - 1, s_fg);
@@ -473,6 +482,12 @@ void face_render(GContext *ctx, const FaceState *st) {
   char date[16];
   snprintf(date, sizeof date, "%02d %s %d", st->now.tm_mday, MON[st->now.tm_mon], st->now.tm_year + 1900);
   text_rc(R0 - PAD - 1, l1, date, s_fg);
+  if (st->week) {
+    char wk[12];
+    snprintf(wk, sizeof wk, "W%02d", iso_week(&st->now));
+    int a = L0 + 1 + PAD + ink_w_c(DOW[st->now.tm_wday]), b = R0 - PAD - ink_w_c(date);
+    text_c(a + (b - a - ink_w_c(wk)) / 2, l1, wk, s_fg);
+  }
   y += hTime + GAP;
 
   char emo[8] = "";

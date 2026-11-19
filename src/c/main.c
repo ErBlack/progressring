@@ -1,13 +1,13 @@
 #include <pebble.h>
 #include "face.h"
 
-enum { P_VER = 1, P_INFO = 2, P_NEV = 3, P_THEME = 4, P_BATT_SRC = 6, P_EV0 = 10 };
+enum { P_VER = 1, P_INFO = 2, P_NEV = 3, P_THEME = 4, P_WEEK = 5, P_BATT_SRC = 6, P_EV0 = 10 };
 #define DATA_VER 3
 
 static Window *s_win;
 static Layer *s_layer;
 static PhoneData s_ph, s_old;
-static uint8_t s_theme, s_batt_src;
+static uint8_t s_theme, s_week, s_batt_src;
 static int s_phone_batt = -1;
 
 static void save(void) {
@@ -21,6 +21,7 @@ static void save(void) {
 
 static void load(void) {
   s_theme = persist_read_int(P_THEME);
+  s_week = persist_read_int(P_WEEK);
   s_batt_src = persist_read_int(P_BATT_SRC);
   memset(&s_ph, 0, sizeof s_ph);
   s_ph.info.cond = 8;
@@ -82,6 +83,7 @@ static void inbox(DictionaryIterator *it, void *ctx) {
     s_ph.nev = n;
   }
   setting(it, MESSAGE_KEY_THEME, P_THEME, &s_theme, THEME_LIGHT);
+  setting(it, MESSAGE_KEY_WEEK, P_WEEK, &s_week, 1);
   setting(it, MESSAGE_KEY_BATT_SRC, P_BATT_SRC, &s_batt_src, BATT_PHONE);
   if ((t = dict_find(it, MESSAGE_KEY_PBATT)) && t->value->int32 != s_phone_batt) {
     s_phone_batt = t->value->int32;
@@ -108,6 +110,7 @@ static void update(Layer *layer, GContext *ctx) {
   st.unobstructed_h = layer_get_unobstructed_bounds(layer).size.h;
   st.ph = &s_ph;
   st.theme = s_theme;
+  st.week = s_week;
   st.batt_src = s_batt_src;
   st.phone_batt = s_phone_batt;
   face_render(ctx, &st);
