@@ -48,7 +48,7 @@ def shot(hm, steps, battery, charging, path):
     pebble('emu-steps', str(steps))
     pebble('emu-set-time', hm + ':00')
     time.sleep(2)
-    pebble('screenshot', '--no-open', str(path))
+    pebble('screenshot', '--no-open', '--no-correction', str(path))
     print(path)
 
 

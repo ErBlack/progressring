@@ -44,7 +44,7 @@
       "place": "JFK", "tz": "UTC-5",
       "steps": 12034, "battery": 23, "charging": true,
       "events": [
-        {"name": "Flight to Lisbon", "start": "07:15", "end": "10:05", "day": 1}
+        {"name": "✈️ Flight to Lisbon", "start": "07:15", "end": "10:05", "day": 1}
       ]
     }
   ]

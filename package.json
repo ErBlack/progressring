@@ -32,7 +32,13 @@
       "THEME"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "raw",
+          "name": "EMOJI_18",
+          "file": "fonts/EMOJI_18.pbf"
+        }
+      ]
     },
     "capabilities": [
       "configurable",

@@ -10,6 +10,7 @@ enum { BAND = 4, TICK_W = 2, MARK_W = 2, MARK_OVER = 2, RING_GAP = 5 };
 enum { GAP = 5, PAD = 5, INNER = 6, LINE_GAP = 5 };
 enum { DIG_W = 37, DIG_T = 9, DIG_GAP = 5, COLON_W = 12, COLON = 6 };
 enum { ADV = 8, TH = 10 };
+enum { EMO_W = 32, EMO_H = 48 };
 
 #define C_BLACK 0xC0
 #define C_WHITE 0xFF
@@ -21,6 +22,7 @@ enum { ADV = 8, TH = 10 };
 
 static uint8_t *s_row[H];
 static uint8_t s_bg, s_fg, s_ghost, s_dim;
+static GFont s_emoji_font;
 static int16_t s_min[H], s_max[H];
 static int s_U;
 
@@ -47,18 +49,47 @@ static float fabsf_(float v) { return v < 0 ? -v : v; }
 
 typedef struct { uint16_t cp[MAXCP]; int n; } Str;
 
-static void str_set(Str *s, const char *u) {
+static const Glyph *glyph(uint16_t cp);
+
+static uint32_t utf8(const uint8_t **pp) {
+  const uint8_t *p = *pp;
+  uint32_t cp;
+  if (*p < 0x80) { cp = *p++; }
+  else if ((*p & 0xE0) == 0xC0 && p[1]) { cp = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F); p += 2; }
+  else if ((*p & 0xF0) == 0xE0 && p[1] && p[2]) { cp = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F); p += 3; }
+  else if ((*p & 0xF8) == 0xF0 && p[1] && p[2] && p[3]) { cp = ((p[0] & 0x07) << 18) | ((p[1] & 0x3F) << 12) | ((p[2] & 0x3F) << 6) | (p[3] & 0x3F); p += 4; }
+  else { p++; while ((*p & 0xC0) == 0x80) p++; cp = '?'; }
+  *pp = p;
+  return cp;
+}
+
+static bool emoji_mod(uint32_t cp) { return cp == 0x200D || cp == 0xFE0E || cp == 0xFE0F || cp == 0x20E3 || (cp >= 0xE0000 && cp <= 0xE007F); }
+
+static bool emoji(uint32_t cp, uint32_t next) {
+  if (cp >= 0x1F000) return true;
+  if (!((cp >= 0x2300 && cp <= 0x23FF) || (cp >= 0x2600 && cp <= 0x27BF) || (cp >= 0x2B00 && cp <= 0x2BFF))) return false;
+  return next == 0xFE0F || glyph(cp)->cp != cp;
+}
+
+static void str_set_e(Str *s, const char *u, char *emo, size_t en) {
   s->n = 0;
+  if (emo) emo[0] = 0;
   const uint8_t *p = (const uint8_t *)u;
   while (*p && s->n < MAXCP) {
-    uint16_t cp;
-    if (*p < 0x80) { cp = *p++; }
-    else if ((*p & 0xE0) == 0xC0 && p[1]) { cp = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F); p += 2; }
-    else if ((*p & 0xF0) == 0xE0 && p[1] && p[2]) { cp = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F); p += 3; }
-    else { p++; while ((*p & 0xC0) == 0x80) p++; cp = '?'; }
-    s->cp[s->n++] = cp;
+    const uint8_t *a = p, *q;
+    uint32_t cp = utf8(&p);
+    q = p;
+    uint32_t next = *q ? utf8(&q) : 0;
+    if (emoji_mod(cp)) continue;
+    if (emoji(cp, next)) {
+      if (emo && !emo[0] && (size_t)(p - a) < en) { memcpy(emo, a, p - a); emo[p - a] = 0; }
+      continue;
+    }
+    s->cp[s->n++] = cp > 0xFFFF ? '?' : cp;
   }
 }
+
+static void str_set(Str *s, const char *u) { str_set_e(s, u, NULL, 0); }
 
 static const Glyph *glyph(uint16_t cp) {
   int lo = 0, hi = GLYPH_COUNT - 1;
@@ -444,13 +475,31 @@ void face_render(GContext *ctx, const FaceState *st) {
   text_rc(R0 - PAD - 1, l1, date, s_fg);
   y += hTime + GAP;
 
+  char emo[8] = "";
+  GRect emo_box = GRectZero;
+  int emo_x = 0, emo_y = 0;
+  uint8_t emo_col = 0;
   if (!peek) {
     bool live = going && conn;
     frame(L0, y, R0, y + hEv - 1, live ? C_EVENT : s_fg);
     int ix = L0 + 1 + PAD, iy = y + 1 + PAD, tx = ix + ICON_CAL.w + INNER, HC = 3 * TH + 2 * LINE_GAP;
-    int icy = iy + ((HC - ICON_CAL.h) >> 1);
     const FaceEvent *shown = going ? going->src : next && (next->start < mid + 86400 || !all_day) ? next : all_day;
-    icon(ix, icy, &ICON_CAL, live ? C_EVENT : s_fg);
+    Str name, l[3];
+    int n = -1;
+    if (conn && shown) {
+      str_set_e(&name, shown->name, emo, sizeof emo);
+      if (!strcmp(emo, "\xF0\x9F\x93\x85") || !strcmp(emo, "\xF0\x9F\x93\x86") || !strcmp(emo, "\xF0\x9F\x97\x93")) emo[0] = 0;
+      n = wrap_words(&name, (R0 - PAD - tx + 1) / ADV, l);
+    }
+    int ly = (row_y(iy, HC, 3, 0) + row_y(iy, HC, 3, 1)) / 2;
+    int icy = (n < 0 ? row_y(iy, HC, 1, 0) : n == 2 ? row_y(iy, HC, 3, 0) : ly) - (ICON_CAL.h - TH + 1) / 2;
+    if (emo[0]) {
+      emo_box = GRect(L0 + 1, iy, imin(tx - 2 - L0, EMO_W), imin(HC, EMO_H));
+      emo_x = ix;
+      emo_y = icy + (ICON_CAL.h - TH + 1) / 2;
+      emo_col = live ? C_EVENT : s_fg;
+    }
+    else icon(ix, icy, &ICON_CAL, live ? C_EVENT : s_fg);
     if (!conn || !shown) text_c(tx, row_y(iy, HC, 1, 0), conn ? "NO EVENTS" : "NO DATA", s_dim);
     else {
       char rem[16] = "", span[24];
@@ -462,12 +511,10 @@ void face_render(GContext *ctx, const FaceState *st) {
         fmt_hm(b, sizeof b, shown->end);
         snprintf(span, sizeof span, "%s-%s", a, b);
       }
-      Str name, l[3];
-      str_set(&name, shown->name);
-      int n = wrap_words(&name, (R0 - PAD - tx + 1) / ADV, l);
-      for (int k = 0; k < n; k++) text(tx, row_y(iy, HC, n + 1, k), &l[k], s_fg);
-      text_c(tx, row_y(iy, HC, n + 1, n), span, s_fg);
-      text_rc(R0 - PAD - 1, row_y(iy, HC, n + 1, n), rem, s_fg);
+      if (!n) text_c(tx, ly, "NO TITLE", s_dim);
+      for (int k = 0; k < n; k++) text(tx, n == 1 ? ly : row_y(iy, HC, 3, k), &l[k], s_fg);
+      text_c(tx, row_y(iy, HC, 3, 2), span, s_fg);
+      text_rc(R0 - PAD - 1, row_y(iy, HC, 3, 2), rem, s_fg);
     }
     y += hEv + GAP;
   }
@@ -492,4 +539,31 @@ void face_render(GContext *ctx, const FaceState *st) {
   tile(xS, y, R0, hSmall, pB, sts[!conn ? 0 : st->quiet ? 1 : 2], slot, true, NULL);
 
   graphics_release_frame_buffer(ctx, fb);
+
+  if (emo[0]) {
+    if (!s_emoji_font) s_emoji_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_EMOJI_18));
+    GRect r = emo_box;
+    graphics_context_set_text_color(ctx, (GColor){.argb = emo_col});
+    graphics_draw_text(ctx, emo, s_emoji_font, r,
+                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    fb = graphics_capture_frame_buffer(ctx);
+    if (!fb) return;
+    static bool mask[EMO_H][EMO_W];
+    int x0 = EMO_W, y0 = EMO_H, x1 = -1, y1 = -1;
+    for (int y = 0; y < r.size.h; y++) {
+      uint8_t *row = gbitmap_get_data_row_info(fb, r.origin.y + y).data;
+      for (int x = 0; x < r.size.w; x++) {
+        uint8_t *c = &row[r.origin.x + x];
+        mask[y][x] = *c != s_bg;
+        *c = s_bg;
+        if (mask[y][x]) { x0 = imin(x0, x); y0 = imin(y0, y); x1 = imax(x1, x); y1 = imax(y1, y); }
+      }
+    }
+    int gw = ICON_CAL.w - (x1 - x0 + 1), gh = TH - (y1 - y0 + 1);
+    int dx = emo_x + (gw - (gw < 0)) / 2 - (r.origin.x + x0), dy = emo_y + (gh - (gh < 0)) / 2 - (r.origin.y + y0);
+    for (int y = y0; y <= y1; y++)
+      for (int x = x0; x <= x1; x++)
+        if (mask[y][x]) gbitmap_get_data_row_info(fb, r.origin.y + y + dy).data[r.origin.x + x + dx] = emo_col;
+    graphics_release_frame_buffer(ctx, fb);
+  }
 }
