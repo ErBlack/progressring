@@ -15,6 +15,17 @@
     ]
   },
   {
+    "type": "radiogroup",
+    "messageKey": "BATT_SRC",
+    "label": "Battery percentage",
+    "defaultValue": "0",
+    "serializeValueAs": "integer",
+    "options": [
+      { "label": "Watch", "value": "0" },
+      { "label": "Phone", "value": "1" }
+    ]
+  },
+  {
     "type": "submit",
     "defaultValue": "Save"
   }

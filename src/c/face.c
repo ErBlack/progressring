@@ -522,7 +522,9 @@ void face_render(GContext *ctx, const FaceState *st) {
   const Icon *sts[3] = {&ICON_PHONEX, &ICON_BELLX, &ICON_PHONE};
   int slot = 0;
   for (int i = 0; i < 3; i++) slot = imax(slot, sts[i]->w);
-  int wS = 2 + 2 * PAD + slot, wB = 2 + 2 * PAD + ICON_BATT.w + INNER + ink_w_c("100%");
+  bool phone = st->batt_src == BATT_PHONE;
+  int pct_w = INNER + ink_w_c("100%");
+  int wS = 2 + 2 * PAD + slot + (phone ? pct_w : 0), wB = 2 + 2 * PAD + ICON_BATT.w + (phone ? 0 : pct_w);
   int xS = R0 - wS + 1, xB = xS - GAP - wB;
 
   char steps[12];
@@ -534,9 +536,11 @@ void face_render(GContext *ctx, const FaceState *st) {
   char bpx[ICON_BATT.w * ICON_BATT.h];
   battery_px(bpx, st->battery, st->charging);
   Icon bat = {ICON_BATT.w, ICON_BATT.h, bpx};
-  tile(xB, y, xS - GAP - 1, hSmall, pB, &bat, 0, false, batt);
+  tile(xB, y, xS - GAP - 1, hSmall, pB, &bat, 0, false, phone ? NULL : batt);
 
-  tile(xS, y, R0, hSmall, pB, sts[!conn ? 0 : st->quiet ? 1 : 2], slot, true, NULL);
+  char pbatt[12];
+  if (conn && st->phone_batt >= 0) snprintf(pbatt, sizeof pbatt, "%d%%", st->phone_batt); else snprintf(pbatt, sizeof pbatt, "--");
+  tile(xS, y, R0, hSmall, pB, sts[!conn ? 0 : st->quiet ? 1 : 2], slot, true, phone ? pbatt : NULL);
 
   graphics_release_frame_buffer(ctx, fb);
 

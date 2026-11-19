@@ -1,13 +1,14 @@
 #include <pebble.h>
 #include "face.h"
 
-enum { P_VER = 1, P_INFO = 2, P_NEV = 3, P_THEME = 4, P_EV0 = 10 };
+enum { P_VER = 1, P_INFO = 2, P_NEV = 3, P_THEME = 4, P_BATT_SRC = 6, P_EV0 = 10 };
 #define DATA_VER 3
 
 static Window *s_win;
 static Layer *s_layer;
 static PhoneData s_ph, s_old;
-static uint8_t s_theme;
+static uint8_t s_theme, s_batt_src;
+static int s_phone_batt = -1;
 
 static void save(void) {
   if (memcmp(&s_old.info, &s_ph.info, sizeof s_ph.info)) persist_write_data(P_INFO, &s_ph.info, sizeof s_ph.info);
@@ -20,6 +21,7 @@ static void save(void) {
 
 static void load(void) {
   s_theme = persist_read_int(P_THEME);
+  s_batt_src = persist_read_int(P_BATT_SRC);
   memset(&s_ph, 0, sizeof s_ph);
   s_ph.info.cond = 8;
   if (persist_read_int(P_VER) != DATA_VER) {
@@ -47,6 +49,16 @@ static void copy_name(char *dst, const uint8_t *src, int len) {
   dst[len] = 0;
 }
 
+static void setting(DictionaryIterator *it, uint32_t key, uint32_t pkey, uint8_t *val, int max) {
+  Tuple *t = dict_find(it, key);
+  if (!t) return;
+  int v = t->value->int32;
+  if (v < 0 || v > max || v == *val) return;
+  *val = v;
+  persist_write_int(pkey, v);
+  layer_mark_dirty(s_layer);
+}
+
 static void inbox(DictionaryIterator *it, void *ctx) {
   Tuple *t;
   memcpy(&s_old, &s_ph, sizeof s_ph);
@@ -69,13 +81,11 @@ static void inbox(DictionaryIterator *it, void *ctx) {
     }
     s_ph.nev = n;
   }
-  if ((t = dict_find(it, MESSAGE_KEY_THEME))) {
-    int v = t->value->int32;
-    if (v >= THEME_DARK && v <= THEME_LIGHT && v != s_theme) {
-      s_theme = v;
-      persist_write_int(P_THEME, v);
-      layer_mark_dirty(s_layer);
-    }
+  setting(it, MESSAGE_KEY_THEME, P_THEME, &s_theme, THEME_LIGHT);
+  setting(it, MESSAGE_KEY_BATT_SRC, P_BATT_SRC, &s_batt_src, BATT_PHONE);
+  if ((t = dict_find(it, MESSAGE_KEY_PBATT)) && t->value->int32 != s_phone_batt) {
+    s_phone_batt = t->value->int32;
+    layer_mark_dirty(s_layer);
   }
   if (memcmp(&s_old, &s_ph, sizeof s_ph)) { save(); layer_mark_dirty(s_layer); }
 }
@@ -98,6 +108,8 @@ static void update(Layer *layer, GContext *ctx) {
   st.unobstructed_h = layer_get_unobstructed_bounds(layer).size.h;
   st.ph = &s_ph;
   st.theme = s_theme;
+  st.batt_src = s_batt_src;
+  st.phone_batt = s_phone_batt;
   face_render(ctx, &st);
 }
 

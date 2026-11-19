@@ -83,6 +83,12 @@ function onCalendar(update) {
   send({ EVENTS: bytes });
 }
 
+function onPhone(update) {
+  var inst = (update.instances || [])[0];
+  var level = inst && shape(inst.properties, 'battery_level', 'numericValue');
+  send({ PBATT: level ? Math.round(level.value) : -1 });
+}
+
 function subscribe(category, item, properties, onData) {
   if (typeof Pebble.subscribeToSource !== 'function') {
     console.log('plugins unavailable');
@@ -130,6 +136,7 @@ Pebble.addEventListener('ready', function() {
   subscribe('preferences', 'weather_location', ['current'], onPlaces);
   subscribe('weather', 'location', ['temperature', 'condition_code', 'sunrise', 'sunset'], onWeather);
   subscribe('calendar', 'event', ['name', 'starts_at', 'ends_at', 'all_day'], onCalendar);
+  subscribe('phone', 'phone_state', ['battery_level'], onPhone);
   locate();
   setInterval(function() { locate(); send({ TZ: tzText() }); }, 30 * 60 * 1000);
 });

@@ -5,6 +5,7 @@
 #define NAME_LEN 128
 
 enum { THEME_DARK, THEME_LIGHT };
+enum { BATT_WATCH, BATT_PHONE };
 
 typedef struct {
   int32_t start;
@@ -39,6 +40,8 @@ typedef struct {
   bool quiet;
   int unobstructed_h;
   uint8_t theme;
+  uint8_t batt_src;
+  int phone_batt;
   const PhoneData *ph;
 } FaceState;
 
